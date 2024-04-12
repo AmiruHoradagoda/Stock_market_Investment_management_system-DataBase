@@ -6,17 +6,19 @@ CREATE TABLE StockExchange (
     StockExchangeId VARCHAR(10) PRIMARY KEY NOT NULL,
     CEO VARCHAR(50) NOT NULL,
     ExchangeLocation VARCHAR(50) NOT NULL,
-    Headquarters VARCHAR(50)
+    Headquarters VARCHAR(10) NOT NULL,
+    CONSTRAINT FK_HeadquartersExchange FOREIGN KEY (Headquarters) REFERENCES StockExchange(StockExchangeId) ON DELETE CASCADE ON UPDATE CASCADE
+    
 );
 INSERT INTO StockExchange (StockExchangeID, CEO, ExchangeLocation, Headquarters)
 VALUES 
-    ('NYSE', 'Stacey Cunningham', 'New York, USA', 'New York, USA'),
-    ('NASDAQ', 'Adena Friedman', 'New York, USA', 'New York, USA'),
-    ('LSE', 'Julia Hoggett', 'London, UK', 'London, UK'),
-    ('SSE', 'Huang Hongyuan', 'Shanghai, China', 'Shanghai, China'),
-    ('HKEX', 'Nicolas Aguzin', 'Hong Kong', 'Hong Kong'),
-    ('TSX', 'John McKenzie', 'Toronto, Canada', 'Toronto, Canada'),
-    ('BSE', 'Ashishkumar Chauhan', 'Mumbai, India', 'Mumbai, India');
+    ('NYSE', 'Stacey Cunningham', 'New York, USA', 'NYSE'),
+    ('NASDAQ', 'Adena Friedman', 'New York, USA', 'NYSE'),
+    ('LSE', 'Julia Hoggett', 'London, UK', 'NYSE'),
+    ('SSE', 'Huang Hongyuan', 'Shanghai, China', 'SSE'),
+    ('HKEX', 'Nicolas Aguzin', 'Hong Kong', 'SSE'),
+    ('TSX', 'John McKenzie', 'Toronto, Canada', 'TSX'),
+    ('BSE', 'Ashishkumar Chauhan', 'Mumbai, India', 'TSX');
 -- (2) Create Trader table(D)
 CREATE TABLE Trader (
     TraderId VARCHAR(10) PRIMARY KEY NOT NULL,
@@ -76,9 +78,9 @@ CREATE TABLE DematAccount (
     DepositoryId VARCHAR(10) NOT NULL,
     BrokerId VARCHAR(10),
     TraderId VARCHAR(10) NOT NULL,
-    CONSTRAINT FK_Depository FOREIGN KEY (DepositoryId) REFERENCES Depository(DepositoryId) ON DELETE CASCADE,
-    CONSTRAINT FK_trader_account FOREIGN KEY (TraderId) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    CONSTRAINT FK_DematAccount_Broker FOREIGN KEY (BrokerId) REFERENCES TradeBroker(BrokerId) ON DELETE SET NULL
+    CONSTRAINT FK_Depository FOREIGN KEY (DepositoryId) REFERENCES Depository(DepositoryId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_trader_account FOREIGN KEY (TraderId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_DematAccount_Broker FOREIGN KEY (BrokerId) REFERENCES TradeBroker(BrokerId) ON DELETE SET NULL ON UPDATE CASCADE
 );
 INSERT INTO DematAccount (DepositoryID, BrokerID, TraderID, AccountNo)
 VALUES 
@@ -117,7 +119,7 @@ CREATE TABLE Share (
     DividendPerShare FLOAT NOT NULL,
     -- given value for share by company is Par value
     ParValue FLOAT NOT NULL,
-    CONSTRAINT FK_Share_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE
+    CONSTRAINT FK_Share_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO Share (ShareID, CompanyID, ShareType, Quantity, DividendPerShare, ParValue)
 VALUES 
@@ -144,8 +146,8 @@ CREATE TABLE StockSymbol (
     TickerSymbol VARCHAR(20) PRIMARY KEY NOT NULL,
     StockExchangeId VARCHAR(10) NOT NULL,
     ShareId VARCHAR(10) NOT NULL,
-    CONSTRAINT FK_StockSymbol_StockExchange FOREIGN KEY (StockExchangeId) REFERENCES StockExchange(StockExchangeId) ON DELETE CASCADE,
-    CONSTRAINT FK_StockSymbol_Share FOREIGN KEY (ShareId) REFERENCES Share(ShareID) ON DELETE CASCADE
+    CONSTRAINT FK_StockSymbol_StockExchange FOREIGN KEY (StockExchangeId) REFERENCES StockExchange(StockExchangeId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_StockSymbol_Share FOREIGN KEY (ShareId) REFERENCES Share(ShareID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO StockSymbol (TickerSymbol, StockExchangeId, ShareId)
 VALUES 
@@ -165,7 +167,6 @@ VALUES
     ('600887BSPRE', 'BSE', 'PREAMZ');
 
 -- (9) Create StockTrade table  
--- ???
 CREATE TABLE StockTrade (
     StockTradeId VARCHAR(10),
     BrokerId VARCHAR(10),
@@ -176,11 +177,10 @@ CREATE TABLE StockTrade (
     PricePerShare DECIMAL(10, 4),
     Year SMALLINT,
     
-    CONSTRAINT FK_StockTrade_Broker FOREIGN KEY (BrokerId) REFERENCES TradeBroker(BrokerId) ON DELETE SET NULL,
-    CONSTRAINT FK_StockTrade_Buyer FOREIGN KEY (BuyerId) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    CONSTRAINT FK_StockTrade_Seller FOREIGN KEY (SellerId) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    FOREIGN KEY (TickerSymbol) REFERENCES StockSymbol(TickerSymbol) ON DELETE CASCADE
-
+    CONSTRAINT FK_StockTrade_Broker FOREIGN KEY (BrokerId) REFERENCES TradeBroker(BrokerId) ON DELETE SET NULL ON UPDATE CASCADE,
+    CONSTRAINT FK_StockTrade_Buyer FOREIGN KEY (BuyerId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_StockTrade_Seller FOREIGN KEY (SellerId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (TickerSymbol) REFERENCES StockSymbol(TickerSymbol) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO StockTrade (StockTradeId, BrokerId, BuyerId, SellerId, TickerSymbol, QuantityOfShares, PricePerShare, Year)
 VALUES 
@@ -203,7 +203,7 @@ CREATE TABLE StocksInMarket (
     Year SMALLINT ,
     PRIMARY KEY(TickerSymbol,Year),
     
-    CONSTRAINT FK_StocksInMarket_StockSymbol FOREIGN KEY (TickerSymbol) REFERENCES StockSymbol(TickerSymbol) ON DELETE CASCADE
+    CONSTRAINT FK_StocksInMarket_StockSymbol FOREIGN KEY (TickerSymbol) REFERENCES StockSymbol(TickerSymbol) ON DELETE CASCADE ON UPDATE CASCADE
     
     );
 INSERT INTO StocksInMarket (TickerSymbol, StockQuantity, BidPrice, AskPrice, MarketPrice, NumberOfPotentialBuys, Year)
@@ -226,8 +226,8 @@ CREATE TABLE Bonds (
     Year SMALLINT,
     PRIMARY KEY(OwnerId,CompanyID,DurationYears,Year),
 
-    CONSTRAINT FK_Bonds_Owner FOREIGN KEY (OwnerId) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    CONSTRAINT FK_Bonds_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE
+    CONSTRAINT FK_Bonds_Owner FOREIGN KEY (OwnerId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_Bonds_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO Bonds (OwnerId, AnnualInterestRate, BondAmount, CompanyID, DurationYears, Year)
 VALUES 
@@ -249,7 +249,7 @@ CREATE TABLE CompanyPortfolio (
     NetIncome FLOAT,
     Year SMALLINT,
     PRIMARY KEY(CompanyID,YEAR),
-    CONSTRAINT FK_CompanyPortfolio_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID)
+    CONSTRAINT FK_CompanyPortfolio_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO CompanyPortfolio (CompanyID, Liabilities, CommonEquity, PreferredEquity, RetainedEarnings, NetIncome, Year)
 VALUES 
@@ -261,7 +261,7 @@ VALUES
     ('SAM06', 13977000, 896000, 123900, 360000000, 360113459.7, 2024),
     ('VOLO7', 21389000, 1620000, 217100, 127000000, 127194579.1, 2024);
 
--- (15) Create ForexInMarket table
+-- (13) Create ForexInMarket table
 CREATE TABLE ForexInMarket (
     Currency_Pair VARCHAR(10),
     ForexRate DECIMAL(10, 4),
@@ -286,9 +286,9 @@ CREATE TABLE ForexTrade (
     SellerId VARCHAR(10),
     Number_Of_Units INT,
     Currency_Id VARCHAR(20),
-    CONSTRAINT FK_ForexTrade_Buyer FOREIGN KEY (BuyerId) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    CONSTRAINT FK_ForexTrade_ForexInMarket FOREIGN KEY (Currency_Id) REFERENCES ForexInMarket(CurrencyID) ON DELETE CASCADE,
-    CONSTRAINT FK_ForexTrade_Seller FOREIGN KEY (SellerId) REFERENCES Trader(TraderId) ON DELETE CASCADE
+    CONSTRAINT FK_ForexTrade_Buyer FOREIGN KEY (BuyerId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_ForexTrade_ForexInMarket FOREIGN KEY (Currency_Id) REFERENCES ForexInMarket(CurrencyID) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_ForexTrade_Seller FOREIGN KEY (SellerId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO ForexTrade (ForexTradeId, BuyerId, SellerId, Number_Of_Units, Currency_Id)
 VALUES 
@@ -300,7 +300,7 @@ VALUES
     ('FTTD6', 'ETTR6', 'APTR8', 450, '24AUD/USD'),
     ('FTTD7', 'MLTR3', 'HSTR14', 500, '24NZD/USD');
 
--- (16) Create BondMarket table
+-- (15) Create BondMarket table
 CREATE TABLE BondMarket (
     BuyerID VARCHAR(10) ,
     TraderID VARCHAR(10),
@@ -309,9 +309,9 @@ CREATE TABLE BondMarket (
     Year SMALLINT,
     PRIMARY KEY(BuyerID,TraderID,CompanyID,BondAmount,Year),
 
-    CONSTRAINT FK_BondMarket_Buyer FOREIGN KEY (BuyerID) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    CONSTRAINT FK_BondMarket_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE,
-    CONSTRAINT FK_BondMarket_Trader FOREIGN KEY (TraderID) REFERENCES Trader(TraderId) ON DELETE CASCADE
+    CONSTRAINT FK_BondMarket_Buyer FOREIGN KEY (BuyerID) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_BondMarket_Company FOREIGN KEY (CompanyID) REFERENCES Company(CompanyID) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_BondMarket_Trader FOREIGN KEY (TraderID) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO BondMarket (BuyerID, TraderID, CompanyID, BondAmount, Year)
 VALUES 
@@ -323,7 +323,7 @@ VALUES
     ('HSTR14', 'APTR8', 'SAM06', 3000000, 2024),
     ('JSTR1', 'ETTR6', 'VOLO7', 6500000, 2024);
 
--- (17) Create ShareHolders table
+-- (16) Create ShareHolders table
 
 CREATE TABLE Share_Holders (
     TraderId VARCHAR(10),
@@ -332,8 +332,8 @@ CREATE TABLE Share_Holders (
     Equity DECIMAL(10, 2),
     Year INT,
     PRIMARY KEY(TraderId,Share_Id,Year),
-    CONSTRAINT FK_ShareHolders_Trade FOREIGN KEY (TraderId) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-    CONSTRAINT FK_ShareHolders_Share FOREIGN KEY (Share_Id) REFERENCES Share(ShareId) ON DELETE CASCADE
+    CONSTRAINT FK_ShareHolders_Trade FOREIGN KEY (TraderId) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_ShareHolders_Share FOREIGN KEY (Share_Id) REFERENCES Share(ShareId) ON DELETE CASCADE ON UPDATE CASCADE
 );
 INSERT INTO Share_Holders (TraderId, Quantity, Share_Id, Equity, Year)
 VALUES
@@ -353,7 +353,7 @@ VALUES
     ('LBTR7', 4000000, 'PRETSL', 26800.00, 2024);
 
 
--- (18) Create DerivativesInMarket table
+-- (17) Create DerivativesInMarket table
 CREATE TABLE DerivativesInMarket (
     DerivativeId VARCHAR(10) PRIMARY KEY,
     DerivativeSeller VARCHAR(20),
@@ -369,7 +369,7 @@ CREATE TABLE DerivativesInMarket (
     DerivativeType VARCHAR(20),
 
      -- CONSTRAINT FK_DerivativesInMarket_TraderSeller FOREIGN KEY (DerivativeSeller) REFERENCES Trader(TraderId) ON DELETE CASCADE,
-     CONSTRAINT FK_DerivativesInMarket_TrederInitialBuyer FOREIGN KEY (InitialBuyer) REFERENCES Trader(TraderId) ON DELETE SET NULL
+     CONSTRAINT FK_DerivativesInMarket_TrederInitialBuyer FOREIGN KEY (InitialBuyer) REFERENCES Trader(TraderId) ON DELETE SET NULL ON UPDATE CASCADE
 
 );
 INSERT INTO DerivativesInMarket (DerivativeId, DerivativeSeller, InitialBuyer, TypeOfAsset, DerivativeTradedPrice, Year, ExpiryDate, InitiatedDate, CurrentAssetPrice, ContractAssetPrice, Premium, DerivativeType) VALUES
@@ -386,7 +386,7 @@ INSERT INTO DerivativesInMarket (DerivativeId, DerivativeSeller, InitialBuyer, T
     ('ISIN11', 'TSL02', 'HLTR13', 'stock', 700, 2024, '2025-03-18', '2024-03-18', 2840000, 2600000, 360, 'futures');
 
 
--- (20) Create Derivative Trade table
+-- (18) Create Derivative Trade table
 CREATE TABLE DerivativeTrade (
     DerivativeTradeID VARCHAR(10),
     DerivativeID VARCHAR(10),
@@ -396,8 +396,8 @@ CREATE TABLE DerivativeTrade (
     InitialBuyerEarning INT,
     SellerEarning INT,
     PRIMARY KEY(DerivativeTradeID,DerivativeID,BuyerID,year),
-    CONSTRAINT FK_DerivativeTrade_Trader FOREIGN KEY (DerivativeID) REFERENCES DerivativesInMarket(DerivativeId) ON DELETE CASCADE,
-    CONSTRAINT FK_DerivativeTrade_BuyerTrader FOREIGN KEY (BuyerID) REFERENCES Trader(TraderId) ON DELETE CASCADE
+    CONSTRAINT FK_DerivativeTrade_Trader FOREIGN KEY (DerivativeID) REFERENCES DerivativesInMarket(DerivativeId) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT FK_DerivativeTrade_BuyerTrader FOREIGN KEY (BuyerID) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 INSERT INTO DerivativeTrade (DerivativeTradeID, DerivativeID, BuyerID, year, BuyerSaving, InitialBuyerEarning, SellerEarning)
@@ -416,19 +416,18 @@ VALUES
 -- (19) Create TraderPortfolio table
 CREATE TABLE TraderPortfolio (
     TraderID VARCHAR(10),
-    BondInterest float(24),
-    DerivativeEarning float(24),
-    ForexEarning float(24),
-    CapitalGain float(24),
-    NetIncome float(24),
-    DividendEarning float(24),
-    BondValues float(24),
+    BondInterest FLOAT(24),
+    DerivativeEarning FLOAT(24),
+    ForexEarning FLOAT(24),
+    CapitalGain FLOAT(24),
+    NetIncome FLOAT(24),
+    DividendEarning FLOAT(24),
+    BondValues FLOAT(24),
     Year INT,
-    PRIMARY KEY(TraderID,YEAR),
-    CONSTRAINT FK_TraderPortfolio_TraderID FOREIGN KEY (TraderID) REFERENCES Trader(TraderId) ON DELETE CASCADE
-
-
+    PRIMARY KEY (TraderID, Year),
+    CONSTRAINT FK_TraderPortfolio_TraderID FOREIGN KEY (TraderID) REFERENCES Trader(TraderId) ON DELETE CASCADE ON UPDATE CASCADE
 );
+
 INSERT INTO TraderPortfolio (TraderID, BondInterest, DerivativeEarning, ForexEarning, CapitalGain, NetIncome, DividendEarning, BondValues, Year) VALUES
     ('APTR8', 1051500, 320, 374.935, 5000, 1059061.602, 1866.667, 8500000, 2024),
     ('AMTR9', 1260000, 1080, 1.317957166, 11670, 1280348.142, 7596.824332, 9000000, 2024),
@@ -437,3 +436,549 @@ INSERT INTO TraderPortfolio (TraderID, BondInterest, DerivativeEarning, ForexEar
     ('HSTR14', 381000, 2300, 404.67, -1080.06, 387600.0479, 4975.43787, 3000000, 2024),
     ('DWTR5', 1199250, 500, 304, 0, 1201455.648, 1401.647847, 10500000, 2024),
     ('ETTR6', 1597000, 400, 248, 0, 1603638.785, 5990.784931, 14200000, 2024);
+
+
+-- Create Update & Delete Quarry
+-- For StockExchange
+UPDATE StockExchange
+SET CEO = 'Jamie Casey'
+WHERE StockExchangeId = 'NYSE';
+SELECT * FROM StockExchange;
+
+DELETE FROM StockExchange
+WHERE StockExchangeId = 'LSE';
+SELECT * FROM StockExchange;
+
+-- For Trader
+UPDATE Trader
+SET TraderName = 'Michael Smith'
+WHERE TraderId = 'MLTR3';
+SELECT * FROM Trader;
+
+DELETE FROM Trader
+WHERE TraderId = 'AJTR4';
+SELECT * FROM Trader;
+
+-- For TradeBroker
+UPDATE TradeBroker
+SET ContactNo = '1-416-555-678'
+WHERE BrokerId = 'ABBR3';
+SELECT * FROM TradeBroker;
+DELETE FROM TradeBroker
+WHERE BrokerId = 'TWBR4';
+SELECT * FROM TradeBroker;
+
+-- For Depository
+UPDATE Depository
+SET DepositoryName = 'Jordan Kim'
+WHERE DepositoryId = 'DTCC';
+SELECT * FROM Depository;
+DELETE FROM Depository
+WHERE DepositoryId = 'EUCL';
+SELECT * FROM Depository;
+
+-- For DematAccount
+UPDATE DematAccount
+SET BrokerId = 'JIBR2'
+WHERE AccountNo = 'NST4J12';
+SELECT * FROM DematAccount;
+DELETE FROM DematAccount
+WHERE AccountNo = 'KLE5R11';
+SELECT * FROM DematAccount;
+
+-- For Company
+UPDATE Company
+SET CompanyOwner = 'Dakota Lee'
+WHERE CompanyId = 'TSL02';
+SELECT * FROM Company;
+SET FOREIGN_KEY_CHECKS = 0;
+DELETE FROM Company  
+WHERE CompanyId = 'SAM06';
+SET FOREIGN_KEY_CHECKS = 1;
+SELECT * FROM Company;
+
+-- For Share
+UPDATE Share
+SET Quantity = Quantity * 2
+WHERE ShareID = 'CMTSL';
+SELECT * FROM Share;
+DELETE FROM Share
+WHERE ShareID = 'PREAPP';
+SELECT * FROM Share;
+
+-- For StockSymbol
+UPDATE StockSymbol
+SET StockExchangeId = 'NASDAQ'
+WHERE TickerSymbol = 'AAPLNYCM';
+SELECT * FROM StockSymbol;
+DELETE FROM StockSymbol
+WHERE TickerSymbol = '9988HKPRE';
+SELECT * FROM StockSymbol;
+
+-- For StockTrade
+UPDATE StockTrade
+SET QuantityOfShares = 500000
+WHERE StockTradeId = 'STKTRD1';
+SELECT * FROM StockTrade;
+DELETE FROM StockTrade
+WHERE StockTradeId = 'STKTRD7';
+SELECT * FROM StockTrade;
+
+-- For StocksInMarket
+UPDATE StocksInMarket
+SET MarketPrice = 0.016
+WHERE TickerSymbol = 'AAPLNYCM' AND Year = 2024;
+SELECT * FROM StocksInMarket;
+DELETE FROM StocksInMarket
+WHERE TickerSymbol = 'VOW3BSCM' AND Year = 2024;
+SELECT * FROM StocksInMarket;
+
+UPDATE Bonds
+SET BondAmount = BondAmount - 1000000
+WHERE CompanyID = 'APPL01' AND OwnerId = 'DWTR5' AND Year = 2024;
+SELECT * FROM Bonds;
+DELETE FROM Bonds
+WHERE CompanyID = 'TSL02' AND DurationYears = 10 AND Year = 2024;
+SELECT * FROM Bonds;
+
+
+UPDATE CompanyPortfolio
+SET NetIncome = 550000000, RetainedEarnings = 550000000
+WHERE CompanyID = 'AMZ04' AND Year = 2024;
+SELECT * FROM CompanyPortfolio;
+DELETE FROM CompanyPortfolio
+WHERE CompanyID = 'SAM06' AND Year = 2024;
+SELECT * FROM CompanyPortfolio;
+
+
+
+UPDATE ForexInMarket
+SET ForexRate = 1.0800
+WHERE CurrencyID = '24EUR/USD' AND Year = 2024;
+SELECT * FROM ForexInMarket;
+DELETE FROM ForexInMarket
+WHERE CurrencyID = '24AUD/USD';
+SELECT * FROM ForexInMarket;
+
+
+UPDATE ForexTrade
+SET Number_Of_Units = 120
+WHERE ForexTradeId = 'FTTD1';
+SELECT * FROM ForexTrade;
+DELETE FROM ForexTrade
+WHERE ForexTradeId = 'FTTD7';
+SELECT * FROM ForexTrade;
+
+
+UPDATE BondMarket
+SET BondAmount = BondAmount + 500000
+WHERE CompanyID = 'VOLO7' AND Year = 2024;
+SELECT * FROM BondMarket;
+DELETE FROM BondMarket
+WHERE CompanyID = 'APPL01' AND Year = 2024;
+SELECT * FROM BondMarket;
+
+
+
+UPDATE Share_Holders
+SET Equity = Equity / 2, Quantity = Quantity * 2
+WHERE Share_Id = 'CMAPP' AND Year = 2024;
+SELECT * FROM Share_Holders;
+DELETE FROM Share_Holders
+WHERE TraderId = 'JITR12' AND Share_Id = 'PRETSL';
+SELECT * FROM Share_Holders;
+
+
+
+UPDATE DerivativesInMarket
+SET CurrentAssetPrice = 850000
+WHERE DerivativeId = 'ISIN04';
+SELECT * FROM DerivativesInMarket;
+DELETE FROM DerivativesInMarket
+WHERE DerivativeId = 'ISIN07';
+SELECT * FROM DerivativesInMarket;
+
+
+
+UPDATE DerivativeTrade
+SET InitialBuyerEarning = 2100
+WHERE DerivativeTradeID = 'DTD2';
+SELECT * FROM DerivativeTrade;
+DELETE FROM DerivativeTrade
+WHERE DerivativeTradeID = 'DTD6';
+SELECT * FROM DerivativeTrade;
+
+
+
+UPDATE TraderPortfolio
+SET NetIncome = NetIncome + 100000
+WHERE TraderID = 'APTR8' AND Year = 2024;
+SELECT * FROM TraderPortfolio;
+DELETE FROM TraderPortfolio
+WHERE TraderID = 'HSTR14' AND Year = 2024;
+SELECT * FROM TraderPortfolio;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- SIMPLE QUARRY --
+USE Stock_market_Investment_management_system;
+-- To retrieve all information from the Trader table
+SELECT * FROM Trader;
+
+-- To retrieve only the TraderName and TraderId from the Trader table
+SELECT Currency_Pair, ForexRate,NumberOfUnits,Year,CurrencyID FROM ForexInMarket;
+
+-- To create a cartesian product between the StockExchange and Trader tables
+SELECT * FROM StockExchange, Trader;
+
+-- To create a view that shows the total bond amount per trader from the Bonds table
+CREATE VIEW TotalBondAmountPerTrader AS
+SELECT OwnerId, SUM(BondAmount) AS TotalBondAmount
+FROM Bonds
+GROUP BY OwnerId;
+select * from TotalBondAmountPerTrader;
+
+-- To rename the TraderName column to Name while selecting from the Trader table
+SELECT TraderName AS TRName FROM Trader;
+
+-- To find the average MarketPrice from the StocksInMarket table
+SELECT AVG(MarketPrice) AS AverageMarketPrice FROM StocksInMarket;
+
+-- SELECT * FROM Trader WHERE TraderName LIKE 'J%';
+SELECT * FROM Trader WHERE TraderName LIKE 'J%';
+
+
+
+
+-- COMPLEX QUARRY --
+
+-- (1)Identifying High-Volume Traders in the Stock Market
+(SELECT t.TraderName
+ FROM Trader t
+ JOIN StockTrade st ON t.TraderId = st.BuyerId
+ WHERE st.QuantityOfShares > 1000000)
+UNION
+(SELECT t.TraderName
+ FROM Trader t
+ JOIN StockTrade st ON t.TraderId = st.SellerId
+ WHERE st.QuantityOfShares > 1000000);
+
+-- (2)Identifying Traders Active in Both Stock and Forex Markets
+-- Traders who have participated in stock trades as buyers or sellers
+(SELECT BuyerId AS Trader FROM StockTrade WHERE BuyerId IS NOT NULL
+ UNION
+ SELECT SellerId AS Trader FROM StockTrade WHERE SellerId IS NOT NULL)
+INTERSECT
+-- Traders who have participated in forex trades as buyers or sellers
+(SELECT BuyerId FROM ForexTrade WHERE BuyerId IS NOT NULL
+ UNION
+ SELECT SellerId FROM ForexTrade WHERE SellerId IS NOT NULL);
+
+
+-- (3)Identifying Companies with Untraded Listed Shares
+-- Companies that have listed shares
+(SELECT CompanyName FROM Company WHERE CompanyId IN (SELECT CompanyID FROM Share))
+EXCEPT
+-- Companies that have had shares traded
+(SELECT c.CompanyName FROM Company c JOIN Share s ON c.CompanyId = s.CompanyID JOIN StockSymbol ss ON s.ShareID = ss.ShareId JOIN StockTrade st ON ss.TickerSymbol = st.TickerSymbol);
+
+
+-- (4)Identifying Traders Who Have Not Bought Preferred Shares
+-- Traders who have bought any shares
+(SELECT BuyerId FROM StockTrade WHERE BuyerId IS NOT NULL)
+EXCEPT
+-- Traders who have bought preferred shares
+(SELECT st.BuyerId 
+ FROM StockTrade st 
+ JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol 
+ JOIN Share s ON ss.ShareId = s.ShareID 
+ WHERE s.ShareType = 'PREFERRED');
+
+
+-- Join operation ******************************************
+
+-- (5)Find the total number of shares bought by each trader for a specific company.
+SELECT t.TraderName, c.CompanyName, SUM(st.QuantityOfShares) AS TotalSharesBought
+FROM Trader t
+INNER JOIN StockTrade st ON t.TraderId = st.BuyerId
+INNER JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol
+INNER JOIN Share s ON ss.ShareId = s.ShareID
+INNER JOIN Company c ON s.CompanyID = c.CompanyId
+GROUP BY t.TraderName, c.CompanyName;
+
+-- (6) List all traders and any shares they have sold, including traders who have not sold any shares.
+
+SELECT t.TraderName, ss.TickerSymbol, SUM(st.QuantityOfShares) AS SharesSold
+FROM Trader t
+LEFT JOIN StockTrade st ON t.TraderId = st.SellerId
+LEFT JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol
+GROUP BY t.TraderName, ss.TickerSymbol;
+
+
+-- (7)Show all stock symbols and any traders who have bought these stocks, including stocks that haven't been bought.
+
+SELECT ss.TickerSymbol, t.TraderName, st.QuantityOfShares
+FROM StockSymbol ss
+LEFT JOIN StockTrade st ON ss.TickerSymbol = st.TickerSymbol AND st.QuantityOfShares > 0
+LEFT JOIN Trader t ON st.BuyerId = t.TraderId
+ORDER BY ss.TickerSymbol, t.TraderName;
+
+-- (8)Combine information on traders and the stocks they've traded, including all traders and all stocks, even if no trades have been made.
+-- Traders and their trades
+(SELECT t.TraderName, ss.TickerSymbol
+ FROM Trader t
+ LEFT JOIN StockTrade st ON t.TraderId = st.BuyerId
+ LEFT JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol)
+UNION
+-- Stocks and their traders
+(SELECT t.TraderName, ss.TickerSymbol
+ FROM StockSymbol ss
+ LEFT JOIN StockTrade st ON ss.TickerSymbol = st.TickerSymbol
+ LEFT JOIN Trader t ON st.BuyerId = t.TraderId);
+
+
+
+-- (9)Generate a hypothetical list of all traders and all stock symbols, representing a matrix of potential trades
+SELECT t.TraderName, ss.TickerSymbol
+FROM Trader t
+CROSS JOIN StockSymbol ss;
+
+
+--(10) Traders and Their Brokers for Each Demat Account
+SELECT t.TraderName, tb.BrokerName, d.DepositoryName
+FROM Trader t
+JOIN DematAccount da ON t.TraderId = da.TraderId
+JOIN TradeBroker tb ON da.BrokerId = tb.BrokerId
+JOIN Depository d ON da.DepositoryId = d.DepositoryId;
+
+-- (11)Trades and Their Stock Exchanges
+SELECT 
+    st.StockTradeId,
+    st.TickerSymbol,
+    st.QuantityOfShares,
+    st.PricePerShare,
+    se.StockExchangeId,
+    se.ExchangeLocation
+FROM 
+    StockTrade st
+JOIN 
+    StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol
+JOIN 
+    StockExchange se ON ss.StockExchangeId = se.StockExchangeId;
+
+-- (12)Listing All Shares and Their Trading Information
+SELECT 
+    s.ShareID,
+    c.CompanyName,
+    ss.TickerSymbol,
+    MAX(st.Year) AS LastTradeYear,
+    MAX(st.PricePerShare) AS LastPricePerShare
+FROM 
+    Share s
+JOIN 
+    Company c ON s.CompanyID = c.CompanyId
+JOIN 
+    StockSymbol ss ON s.ShareID = ss.ShareId
+RIGHT OUTER JOIN 
+    StockTrade st ON ss.TickerSymbol = st.TickerSymbol
+GROUP BY 
+    s.ShareID, c.CompanyName, ss.TickerSymbol
+ORDER BY 
+    LastTradeYear DESC, LastPricePerShare DESC;
+
+
+-- (13)Find Companies with Above Average Dividend Per Share
+SELECT c.CompanyName, AVG(s.DividendPerShare) AS AvgDividend
+FROM Company c
+JOIN Share s ON c.CompanyId = s.CompanyID
+WHERE s.DividendPerShare > (
+    SELECT AVG(DividendPerShare) FROM Share
+)
+GROUP BY c.CompanyName
+HAVING AVG(s.DividendPerShare) > (
+    SELECT AVG(DividendPerShare) FROM Share
+);
+
+-- (14)Traders with Highest Trade Volume in a Year
+SELECT t.TraderName, SUM(st.QuantityOfShares) AS TotalVolume
+FROM Trader t
+JOIN StockTrade st ON t.TraderId = st.BuyerId OR t.TraderId = st.SellerId
+WHERE st.Year = (
+    SELECT MAX(Year) FROM StockTrade
+)
+GROUP BY t.TraderName
+HAVING SUM(st.QuantityOfShares) > (
+    SELECT AVG(TotalVolume) FROM (
+        SELECT SUM(QuantityOfShares) AS TotalVolume
+        FROM StockTrade
+        WHERE Year = (
+            SELECT MAX(Year) FROM StockTrade
+        )
+        GROUP BY BuyerId, SellerId
+    ) AS YearlyAverage
+)
+ORDER BY TotalVolume DESC;
+
+-- (15)Companies with No Trades in the Last Year
+SELECT c.CompanyName
+FROM Company c
+WHERE c.CompanyId NOT IN (
+    SELECT DISTINCT s.CompanyID
+    FROM StockTrade st
+    JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol
+    JOIN Share s ON ss.ShareId = s.ShareID
+    WHERE st.Year = (
+        SELECT MAX(Year) FROM StockTrade
+    )
+);
+
+-- (16)Traders Who Bought Shares Before a Price Increase
+SELECT DISTINCT t.TraderName
+FROM Trader t
+JOIN StockTrade st1 ON t.TraderId = st1.BuyerId
+WHERE EXISTS (
+    SELECT 1
+    FROM StockTrade st2
+    WHERE st2.TickerSymbol = st1.TickerSymbol
+    AND st2.PricePerShare > st1.PricePerShare
+    AND st2.Year >= st1.Year
+);
+
+-- *******************************************
+-- Tunning Part
+
+EXPLAIN (SELECT t.TraderName
+ FROM Trader t
+ JOIN StockTrade st ON t.TraderId = st.BuyerId
+ WHERE st.QuantityOfShares > 1000000)
+UNION
+(SELECT t.TraderName
+ FROM Trader t
+ JOIN StockTrade st ON t.TraderId = st.SellerId
+ WHERE st.QuantityOfShares > 1000000);
+-- Indexes for Query 1 (Identifying High-Volume Traders in the Stock Market)
+CREATE INDEX idx_stocktrade_buyerid ON StockTrade(BuyerId);
+CREATE INDEX idx_stocktrade_sellerid ON StockTrade(SellerId);
+CREATE INDEX idx_stocktrade_quantityofshares ON StockTrade(QuantityOfShares);
+
+
+
+
+EXPLAIN (SELECT BuyerId AS Trader FROM StockTrade WHERE BuyerId IS NOT NULL
+ UNION
+ SELECT SellerId AS Trader FROM StockTrade WHERE SellerId IS NOT NULL)
+INTERSECT
+-- Traders who have participated in forex trades as buyers or sellers
+(SELECT BuyerId FROM ForexTrade WHERE BuyerId IS NOT NULL
+ UNION
+ SELECT SellerId FROM ForexTrade WHERE SellerId IS NOT NULL);
+
+-- Indexes for Query 2 (Identifying Traders Active in Both Stock and Forex Markets)
+CREATE INDEX idx_stocktrade_buyersellers ON StockTrade(BuyerId, SellerId);
+CREATE INDEX idx_forextrade_buyersellers ON ForexTrade(BuyerId, SellerId);
+
+
+
+EXPLAIN (SELECT CompanyName FROM Company WHERE CompanyId IN (SELECT CompanyID FROM Share))
+EXCEPT
+(SELECT c.CompanyName FROM Company c JOIN Share s ON c.CompanyId = s.CompanyID JOIN StockSymbol ss ON s.ShareID = ss.ShareId JOIN StockTrade st ON ss.TickerSymbol = st.TickerSymbol);
+
+-- Indexes for Query 3 (Identifying Companies with Untraded Listed Shares)
+CREATE INDEX idx_company_companyid ON Company(CompanyId);
+CREATE INDEX idx_share_companyid ON Share(CompanyID);
+CREATE INDEX idx_stocksymbol_shareid ON StockSymbol(ShareId);
+CREATE INDEX idx_stocktrade_tickersymbol ON StockTrade(TickerSymbol);
+
+
+EXPLAIN (SELECT BuyerId FROM StockTrade WHERE BuyerId IS NOT NULL)
+EXCEPT
+(SELECT st.BuyerId 
+ FROM StockTrade st 
+ JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol 
+ JOIN Share s ON ss.ShareId = s.ShareID 
+ WHERE s.ShareType = 'PREFERRED');
+
+-- Indexes for Query 4 (Identifying Traders Who Have Not Bought Preferred Shares)
+CREATE INDEX idx_stocksymbol_tickersymbol ON StockSymbol(TickerSymbol);
+CREATE INDEX idx_share_shareid_sharetype ON Share(ShareID, ShareType);
+
+
+
+EXPLAIN SELECT t.TraderName, c.CompanyName, SUM(st.QuantityOfShares) AS TotalSharesBought
+FROM Trader t
+INNER JOIN StockTrade st ON t.TraderId = st.BuyerId
+INNER JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol
+INNER JOIN Share s ON ss.ShareId = s.ShareID
+INNER JOIN Company c ON s.CompanyID = c.CompanyId
+GROUP BY t.TraderName, c.CompanyName;
+
+-- Indexes for Query 5 (Total number of shares bought by each trader for a specific company)
+CREATE INDEX idx_stocktrade_buyerid_quantityofshares ON StockTrade(BuyerId, QuantityOfShares);
+CREATE INDEX idx_share_companyid_shareid ON Share(CompanyID, ShareID);
+CREATE INDEX idx_stocksymbol_shareid_tickersymbol ON StockSymbol(ShareId, TickerSymbol);
+
+
+
+
+EXPLAIN SELECT t.TraderName, ss.TickerSymbol, SUM(st.QuantityOfShares) AS SharesSold
+FROM Trader t
+LEFT JOIN StockTrade st ON t.TraderId = st.SellerId
+LEFT JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol
+GROUP BY t.TraderName, ss.TickerSymbol;
+CREATE INDEX idx_stocktrade_sellerid_tickersymbol ON StockTrade(SellerId, TickerSymbol);
+
+EXPLAIN SELECT ss.TickerSymbol, t.TraderName, st.QuantityOfShares
+FROM StockSymbol ss
+LEFT JOIN StockTrade st ON ss.TickerSymbol = st.TickerSymbol AND st.QuantityOfShares > 0
+LEFT JOIN Trader t ON st.BuyerId = t.TraderId
+ORDER BY ss.TickerSymbol, t.TraderName;
+CREATE INDEX idx_stocktrade_buyerid_quantity ON StockTrade(BuyerId, QuantityOfShares);
+
+EXPLAIN (SELECT t.TraderName, ss.TickerSymbol
+ FROM Trader t
+ LEFT JOIN StockTrade st ON t.TraderId = st.BuyerId
+ LEFT JOIN StockSymbol ss ON st.TickerSymbol = ss.TickerSymbol)
+UNION
+
+(SELECT t.TraderName, ss.TickerSymbol
+ FROM StockSymbol ss
+ LEFT JOIN StockTrade st ON ss.TickerSymbol = st.TickerSymbol
+ LEFT JOIN Trader t ON st.BuyerId = t.TraderId);
+
+
+
+EXPLAIN SELECT t.TraderName, ss.TickerSymbol
+FROM Trader t
+CROSS JOIN StockSymbol ss;
+-- Indexes for Query 9 (Traders and Their Brokers for Each Demat Account)
+CREATE INDEX idx_demataccount_traderid_brokerid ON DematAccount(TraderId, BrokerId);
+CREATE INDEX idx_tradebroker_brokerid ON TradeBroker(BrokerId);
+
+
+
+
+EXPLAIN SELECT t.TraderName, tb.BrokerName, d.DepositoryName
+FROM Trader t
+JOIN DematAccount da ON t.TraderId = da.TraderId
+JOIN TradeBroker tb ON da.BrokerId = tb.BrokerId
+JOIN Depository d ON da.DepositoryId = d.DepositoryId;
+-- Indexes for Query 10 (Trades and Their Stock Exchanges)
+CREATE INDEX idx_stocksymbol_stockexchangeid ON StockSymbol(StockExchangeId);
+CREATE INDEX idx_stockexchange_stockexchangeid ON StockExchange(StockExchangeId);
+
+
